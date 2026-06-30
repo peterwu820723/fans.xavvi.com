@@ -3,5 +3,7 @@ Thumbs.db
 tools/__pycache__/
 outputs/
 assets/top-videos/
+node_modules/
 
 .vercel
+.env*.local
