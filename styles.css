@@ -58,6 +58,38 @@ a {
   height: auto;
 }
 
+.language-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(56px, 1fr));
+  width: fit-content;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.language-toggle button {
+  min-height: 38px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 850;
+  padding: 0 14px;
+}
+
+.language-toggle button.active {
+  background: var(--charcoal);
+  color: #fff;
+}
+
+.language-toggle button:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.28);
+  outline-offset: -3px;
+}
+
 .eyebrow,
 .feature-copy p,
 .controls span {

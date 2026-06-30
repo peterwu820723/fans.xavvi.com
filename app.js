@@ -1,15 +1,104 @@
 const influencers = Array.isArray(window.INFLUENCERS) ? window.INFLUENCERS : [];
 const pageSize = 48;
+const languageKey = "xavviInfluencerLanguage";
 
 let activeIndex = 0;
 let visibleCount = pageSize;
 let filtered = [];
 let rotationTimer = null;
+let language = localStorage.getItem(languageKey) === "en" ? "en" : "zh";
+
+const copy = {
+  zh: {
+    documentTitle: "Xavvi ????????",
+    eyebrow: "??????",
+    total: "??",
+    photos: "??",
+    socialLinks: "????",
+    search: "??",
+    searchPlaceholder: "????????",
+    category: "??",
+    sort: "??",
+    allCategories: "????",
+    matched: "?????",
+    loadMore: "????",
+    followers: "??",
+    views: "??",
+    views30d: "30???",
+    global: "??",
+    er: "???",
+    sorts: {
+      followers: "???",
+      views30d: "30???",
+      likes30d: "30???",
+      engagementRate: "???",
+      gmv: "GMV",
+    },
+  },
+  en: {
+    documentTitle: "Xavvi U.S. Beauty Influencer List",
+    eyebrow: "Beauty Creator Directory",
+    total: "Creators",
+    photos: "Photos",
+    socialLinks: "Social Links",
+    search: "Search",
+    searchPlaceholder: "Name, handle, category",
+    category: "Category",
+    sort: "Sort",
+    allCategories: "All categories",
+    matched: "matched influencers",
+    loadMore: "Load more",
+    followers: "followers",
+    views: "views",
+    views30d: "views / 30d",
+    global: "Global",
+    er: "ER",
+    sorts: {
+      followers: "Followers",
+      views30d: "30 Days Views",
+      likes30d: "30 Days Likes",
+      engagementRate: "ER Rate",
+      gmv: "GMV",
+    },
+  },
+};
+
+const categoryCopy = {
+  "Uncategorized": "???",
+  "Beauty & Personal Care": "????",
+  "Womenswear & Underwear": "????",
+  "Fashion Accessories": "????",
+  "Food & Beverages": "????",
+  "Sports & Outdoor": "????",
+  "Home Supplies": "????",
+  "Menswear & Underwear": "????",
+  "Toys & Hobbies": "????",
+  "Furniture": "??",
+  "Health": "??",
+  "Phones & Electronics": "????",
+  "Baby & Maternity": "??",
+  "Household Appliances": "????",
+  "Pet Supplies": "????",
+  "Kitchenware": "??",
+  "Tools & Hardware": "????",
+  "Books, Magazines & Audio": "????",
+  "Automotive & Motorcycle": "????",
+  "Collectibles": "???",
+  "Luggage & Bags": "??",
+  "Shoes": "??",
+  "Jewelry Accessories & Derivatives": "????",
+  "Textiles & Soft Furnishings": "????",
+};
 
 const els = {
+  heading: document.querySelector("h1"),
+  eyebrow: document.querySelector(".eyebrow"),
+  languageButtons: document.querySelectorAll("[data-language]"),
   totalCount: document.querySelector("#totalCount"),
   photoCount: document.querySelector("#photoCount"),
   socialCount: document.querySelector("#socialCount"),
+  statLabels: document.querySelectorAll(".stats small"),
+  controlLabels: document.querySelectorAll(".controls label > span"),
   featureMedia: document.querySelector("#featureMedia"),
   featureCategory: document.querySelector("#featureCategory"),
   featureName: document.querySelector("#featureName"),
@@ -22,6 +111,7 @@ const els = {
   categorySelect: document.querySelector("#categorySelect"),
   sortSelect: document.querySelector("#sortSelect"),
   resultCount: document.querySelector("#resultCount"),
+  resultLabel: document.querySelector(".result-bar span"),
   creatorGrid: document.querySelector("#creatorGrid"),
   loadMore: document.querySelector("#loadMore"),
 };
@@ -34,10 +124,22 @@ function numberValue(value) {
 
 function formatCompact(value) {
   const numeric = numberValue(value);
-  return new Intl.NumberFormat("en", {
+  return new Intl.NumberFormat(language === "zh" ? "zh-CN" : "en", {
     notation: "compact",
     maximumFractionDigits: numeric >= 1000000 ? 1 : 0,
   }).format(numeric);
+}
+
+function text(key) {
+  return copy[language][key];
+}
+
+function displayCategory(category) {
+  return language === "zh" ? categoryCopy[category] || category : category;
+}
+
+function displayRegion(region) {
+  return region || text("global");
 }
 
 function initials(name) {
@@ -88,12 +190,12 @@ function setFeature(index) {
   els.featureMedia.classList.remove("is-fallback");
   els.featureMedia.textContent = "";
   els.featureMedia.style.backgroundImage = `url("${item.avatarLocal}")`;
-  els.featureCategory.textContent = item.category;
+  els.featureCategory.textContent = displayCategory(item.category);
   els.featureName.textContent = item.name;
   els.featureHandle.textContent = item.handle;
   els.featureHandle.href = item.socials[0]?.url || "#";
-  els.featureFollowers.textContent = `${formatCompact(item.metrics.followers)} followers`;
-  els.featureViews.textContent = `${formatCompact(item.metrics.views30d)} views / 30d`;
+  els.featureFollowers.textContent = `${formatCompact(item.metrics.followers)} ${text("followers")}`;
+  els.featureViews.textContent = `${formatCompact(item.metrics.views30d)} ${text("views30d")}`;
   els.featureLinks.innerHTML = socialLinks(item, 5);
 
   els.photoStrip.querySelectorAll(".photo-tile").forEach((tile) => {
@@ -127,9 +229,15 @@ function populateCategories() {
     a.localeCompare(b),
   );
   els.categorySelect.innerHTML = [
-    '<option value="all">All categories</option>',
-    ...categories.map((category) => `<option value="${category}">${category}</option>`),
+    `<option value="all">${text("allCategories")}</option>`,
+    ...categories.map((category) => `<option value="${category}">${displayCategory(category)}</option>`),
   ].join("");
+}
+
+function populateSortOptions() {
+  [...els.sortSelect.options].forEach((option) => {
+    option.textContent = copy[language].sorts[option.value] || option.textContent;
+  });
 }
 
 function applyFilters() {
@@ -145,6 +253,7 @@ function applyFilters() {
         item.name,
         item.handle,
         item.category,
+        displayCategory(item.category),
         item.region,
         item.socials.map((social) => social.url).join(" "),
       ]
@@ -160,7 +269,7 @@ function applyFilters() {
 
 function renderGrid() {
   const visible = filtered.slice(0, visibleCount);
-  els.resultCount.textContent = filtered.length.toLocaleString("en");
+  els.resultCount.textContent = filtered.length.toLocaleString(language === "zh" ? "zh-CN" : "en");
   els.creatorGrid.innerHTML = visible
     .map(
       (item) => `
@@ -168,8 +277,8 @@ function renderGrid() {
           <div class="avatar-frame">${creatorImage(item)}</div>
           <div class="card-body">
             <div class="meta-row">
-              <span>${item.region || "Global"}</span>
-              <span>${item.category}</span>
+              <span>${displayRegion(item.region)}</span>
+              <span>${displayCategory(item.category)}</span>
             </div>
             <div>
               <h3>${item.name}</h3>
@@ -178,9 +287,9 @@ function renderGrid() {
               </a>
             </div>
             <div class="metric-row">
-              <span>${formatCompact(item.metrics.followers)} followers</span>
-              <span>${formatCompact(item.metrics.views30d)} views</span>
-              <span>${numberValue(item.metrics.engagementRate).toFixed(1)}% ER</span>
+              <span>${formatCompact(item.metrics.followers)} ${text("followers")}</span>
+              <span>${formatCompact(item.metrics.views30d)} ${text("views")}</span>
+              <span>${numberValue(item.metrics.engagementRate).toFixed(1)}% ${text("er")}</span>
             </div>
             <div class="card-links">${socialLinks(item)}</div>
           </div>
@@ -191,17 +300,57 @@ function renderGrid() {
   els.loadMore.hidden = visibleCount >= filtered.length;
 }
 
+function renderStaticText() {
+  document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+  document.title = text("documentTitle");
+  els.heading.textContent = text("documentTitle");
+  els.eyebrow.textContent = text("eyebrow");
+  els.searchInput.placeholder = text("searchPlaceholder");
+  els.resultLabel.textContent = text("matched");
+  els.loadMore.textContent = text("loadMore");
+  els.statLabels[0].textContent = text("total");
+  els.statLabels[1].textContent = text("photos");
+  els.statLabels[2].textContent = text("socialLinks");
+  els.controlLabels[0].textContent = text("search");
+  els.controlLabels[1].textContent = text("category");
+  els.controlLabels[2].textContent = text("sort");
+  els.languageButtons.forEach((button) => {
+    const isActive = button.dataset.language === language;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+  populateSortOptions();
+}
+
+function renderCounts() {
+  const socialCount = influencers.reduce((sum, item) => sum + item.socials.length, 0);
+  els.totalCount.textContent = influencers.length.toLocaleString(language === "zh" ? "zh-CN" : "en");
+  els.photoCount.textContent = photoInfluencers.length.toLocaleString(language === "zh" ? "zh-CN" : "en");
+  els.socialCount.textContent = socialCount.toLocaleString(language === "zh" ? "zh-CN" : "en");
+}
+
+function setLanguage(nextLanguage) {
+  language = nextLanguage === "en" ? "en" : "zh";
+  localStorage.setItem(languageKey, language);
+  const selectedCategory = els.categorySelect.value;
+  renderStaticText();
+  populateCategories();
+  if ([...els.categorySelect.options].some((option) => option.value === selectedCategory)) {
+    els.categorySelect.value = selectedCategory;
+  }
+  renderCounts();
+  setFeature(activeIndex);
+  applyFilters();
+}
+
 function startRotation() {
   if (rotationTimer) window.clearInterval(rotationTimer);
   rotationTimer = window.setInterval(() => setFeature(activeIndex + 1), 4200);
 }
 
 function init() {
-  const socialCount = influencers.reduce((sum, item) => sum + item.socials.length, 0);
-  els.totalCount.textContent = influencers.length.toLocaleString("en");
-  els.photoCount.textContent = photoInfluencers.length.toLocaleString("en");
-  els.socialCount.textContent = socialCount.toLocaleString("en");
-
+  renderStaticText();
+  renderCounts();
   populateCategories();
   renderPhotoStrip();
   setFeature(0);
@@ -211,6 +360,9 @@ function init() {
   els.searchInput.addEventListener("input", applyFilters);
   els.categorySelect.addEventListener("change", applyFilters);
   els.sortSelect.addEventListener("change", applyFilters);
+  els.languageButtons.forEach((button) => {
+    button.addEventListener("click", () => setLanguage(button.dataset.language));
+  });
   els.loadMore.addEventListener("click", () => {
     visibleCount += pageSize;
     renderGrid();
