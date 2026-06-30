@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xavvi 美国美妆网红名单</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar" aria-label="Overview">
+        <div class="brand-title">
+          <img class="brand-logo" src="assets/xavvi_logo_transp_simple.png" alt="Xavvi" />
+          <p class="eyebrow">Beauty Creator Directory</p>
+          <h1>Xavvi 美国美妆网红名单</h1>
+        </div>
+        <div class="stats" aria-label="List statistics">
+          <div>
+            <span id="totalCount">0</span>
+            <small>Creators</small>
+          </div>
+          <div>
+            <span id="photoCount">0</span>
+            <small>Photos</small>
+          </div>
+          <div>
+            <span id="socialCount">0</span>
+            <small>Social Links</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="spotlight" aria-label="Featured influencer photos">
+        <article class="feature-card" id="featureCard">
+          <div class="feature-media" id="featureMedia"></div>
+          <div class="feature-copy">
+            <p id="featureCategory">Category</p>
+            <h2 id="featureName">Creator</h2>
+            <a id="featureHandle" href="#" target="_blank" rel="noreferrer">@handle</a>
+            <div class="feature-metrics">
+              <span id="featureFollowers">0 followers</span>
+              <span id="featureViews">0 views</span>
+            </div>
+            <div class="feature-links" id="featureLinks"></div>
+          </div>
+        </article>
+        <div class="photo-strip" id="photoStrip" aria-label="Photo carousel"></div>
+      </section>
+
+      <section class="controls" aria-label="Filters">
+        <label class="search-box">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="姓名、账号、类别" autocomplete="off" />
+        </label>
+        <label>
+          <span>Category</span>
+          <select id="categorySelect"></select>
+        </label>
+        <label>
+          <span>Sort</span>
+          <select id="sortSelect">
+            <option value="followers">Followers</option>
+            <option value="views30d">30 Days Views</option>
+            <option value="likes30d">30 Days Likes</option>
+            <option value="engagementRate">ER Rate</option>
+            <option value="gmv">GMV</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="result-bar" aria-live="polite">
+        <strong id="resultCount">0</strong>
+        <span>matched influencers</span>
+      </section>
+
+      <section class="grid" id="creatorGrid" aria-label="Influencer cards"></section>
+      <button class="load-more" id="loadMore" type="button">Load more</button>
+    </main>
+
+    <script src="data/influencers.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
