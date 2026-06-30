@@ -1,2 +1,5 @@
 .DS_Store
 Thumbs.db
+tools/__pycache__/
+outputs/
+assets/top-videos/

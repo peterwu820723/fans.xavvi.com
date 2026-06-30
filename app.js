@@ -1,4 +1,5 @@
 const influencers = Array.isArray(window.INFLUENCERS) ? window.INFLUENCERS : [];
+const topVideos = window.TOP_VIDEOS && typeof window.TOP_VIDEOS === "object" ? window.TOP_VIDEOS : {};
 const pageSize = 48;
 const languageKey = "xavviInfluencerLanguage";
 
@@ -63,6 +64,13 @@ const copy = {
   },
 };
 
+copy.zh.topVideos = "热门视频";
+copy.zh.playVideo = "播放视频";
+copy.zh.noVideos = "暂无视频";
+copy.en.topVideos = "Top videos";
+copy.en.playVideo = "Play video";
+copy.en.noVideos = "No videos yet";
+
 const categoryCopy = {
   "Uncategorized": "未分类",
   "Beauty & Personal Care": "美妆个护",
@@ -114,6 +122,10 @@ const els = {
   resultLabel: document.querySelector(".result-bar span"),
   creatorGrid: document.querySelector("#creatorGrid"),
   loadMore: document.querySelector("#loadMore"),
+  videoModal: document.querySelector("#videoModal"),
+  videoPlayer: document.querySelector("#videoPlayer"),
+  videoTitle: document.querySelector("#videoTitle"),
+  videoClose: document.querySelector("#videoClose"),
 };
 
 const photoInfluencers = influencers.filter((item) => item.avatarLocal);
@@ -128,6 +140,15 @@ function formatCompact(value) {
     notation: "compact",
     maximumFractionDigits: numeric >= 1000000 ? 1 : 0,
   }).format(numeric);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function text(key) {
@@ -181,6 +202,62 @@ function socialLinks(item, limit = 4) {
 
 function sortValue(item, key) {
   return numberValue(item.metrics?.[key]);
+}
+
+function renderTopVideos(item) {
+  const videos = topVideos[item.handle] || [];
+  if (!videos.length) {
+    return `<div class="video-shelf empty">${text("noVideos")}</div>`;
+  }
+
+  return `
+    <div class="video-shelf" aria-label="${text("topVideos")}">
+      <div class="video-shelf-title">${text("topVideos")}</div>
+      <div class="video-thumbs">
+        ${videos
+          .map(
+            (video) => `
+              <button
+                class="video-thumb"
+                type="button"
+                data-video-src="${escapeHtml(video.video)}"
+                data-video-title="${escapeHtml(video.title || item.name)}"
+                aria-label="${text("playVideo")}: ${escapeHtml(video.title || item.name)}"
+              >
+                <img src="${escapeHtml(video.thumbnail || item.avatarLocal || "")}" alt="" loading="lazy" />
+                <span class="video-rank">#${video.rank}</span>
+                <span class="video-plays">${formatCompact(video.play_count)} ${text("views")}</span>
+              </button>
+            `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function openVideo(button) {
+  const src = button.dataset.videoSrc;
+  if (!src) return;
+  els.videoTitle.textContent = button.dataset.videoTitle || text("topVideos");
+  els.videoPlayer.src = src;
+  els.videoModal.classList.add("open");
+  els.videoModal.setAttribute("aria-hidden", "false");
+  els.videoPlayer.play().catch(() => {});
+}
+
+function closeVideo() {
+  els.videoPlayer.pause();
+  els.videoPlayer.removeAttribute("src");
+  els.videoPlayer.load();
+  els.videoModal.classList.remove("open");
+  els.videoModal.setAttribute("aria-hidden", "true");
+}
+
+function bindVideoButtons() {
+  els.creatorGrid.querySelectorAll(".video-thumb").forEach((button) => {
+    button.addEventListener("click", () => openVideo(button));
+  });
 }
 
 function setFeature(index) {
@@ -291,12 +368,14 @@ function renderGrid() {
               <span>${formatCompact(item.metrics.views30d)} ${text("views")}</span>
               <span>${numberValue(item.metrics.engagementRate).toFixed(1)}% ${text("er")}</span>
             </div>
+            ${renderTopVideos(item)}
             <div class="card-links">${socialLinks(item)}</div>
           </div>
         </article>
       `,
     )
     .join("");
+  bindVideoButtons();
   els.loadMore.hidden = visibleCount >= filtered.length;
 }
 
@@ -366,6 +445,15 @@ function init() {
   els.loadMore.addEventListener("click", () => {
     visibleCount += pageSize;
     renderGrid();
+  });
+  els.videoClose.addEventListener("click", closeVideo);
+  els.videoModal.addEventListener("click", (event) => {
+    if (event.target === els.videoModal) closeVideo();
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && els.videoModal.classList.contains("open")) {
+      closeVideo();
+    }
   });
 }
 
